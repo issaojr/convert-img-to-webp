@@ -21,8 +21,10 @@
 # Importando as bibliotecas necessárias
 import os
 import subprocess
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QLineEdit, QMenu, QAction, QMessageBox, QListWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QLineEdit, QMenu, QAction, QMessageBox, QListWidget, QDialog, QTextEdit, QVBoxLayout, QScrollArea
 from PyQt5.QtCore import Qt
+
+CONST_QUALITY = "80"
 
 # Função para converter imagens para o formato webp
 def convert_to_webp(input_file, output_file):
@@ -33,7 +35,7 @@ def convert_to_webp(input_file, output_file):
         output_file = f"{base_output_file.rsplit('.', 1)[0]}({i}).webp"
         i += 1
     try:
-        subprocess.run(["./webp/bin/cwebp.exe", "-q", "80", input_file, "-o", output_file], check=True)
+        subprocess.run(["libwebp/bin/cwebp.exe", "-q", CONST_QUALITY, input_file, "-o", output_file], check=True)
     except subprocess.CalledProcessError as e:
         return f"A conversão falhou com o seguinte erro: {e.stderr.decode('utf-8')}"
     return "Conversão concluída com sucesso!"
@@ -42,12 +44,7 @@ def convert_to_webp(input_file, output_file):
 def select_input_files():
     files = QFileDialog.getOpenFileNames()[0]
     if not files:
-        return
-    directory = os.path.dirname(files[0])
-    for file in files:
-        if os.path.dirname(file) != directory:
-            QMessageBox.critical(None, "Erro", "Todos os arquivos devem estar no mesmo diretório.")
-            return
+        return    
     input_files.addItems(files)
     convert_button.setEnabled(True)  # Habilita o botão quando um arquivo é selecionado
 
@@ -73,6 +70,7 @@ def select_output_dir():
 def convert():
     input_files_value = [input_files.item(i).text() for i in range(input_files.count())]
     output_dir_value = output_dir.text()
+    messagesList = []
 
     for input_path_value in input_files_value:
         if os.path.isdir(input_path_value):
@@ -81,19 +79,22 @@ def convert():
                     input_file = os.path.join(input_path_value, filename)
                     output_file = os.path.join(output_dir_value, os.path.splitext(filename)[0] + '.webp')
                     message = convert_to_webp(input_file, output_file)
-                    if "Conversão concluída com sucesso!" in message:
-                        QMessageBox.information(None, "Conversão concluída com sucesso!", f'Os arquivos convertidos foram salvos em {output_dir_value}')
-                    else:
-                        QMessageBox.critical(None, "Erro", message)
+            if "Conversão concluída com sucesso!" in message:
+                messagesList.append(f'Sucesso! Imagem {input_file} convertida!')
+            else:
+                messagesList.append(f'Erro! Imagem {input_file} falhou!')
         elif os.path.isfile(input_path_value):
             if input_path_value.endswith('.png') or input_path_value.endswith('.jpg') or input_path_value.endswith('.jpeg') or input_path_value.endswith('.tiff'):
+                print(os.path.abspath(input_path_value))
                 filename = os.path.basename(input_path_value)
                 output_file = os.path.join(output_dir_value, os.path.splitext(filename)[0] + '.webp')
-                message = convert_to_webp(input_file, output_file)
+                message = convert_to_webp(input_path_value, output_file)
                 if "Conversão concluída com sucesso!" in message:
-                    QMessageBox.information(None, "Conversão concluída com sucesso!", f'Os arquivos convertidos foram salvos em {output_dir_value}')
+                    messagesList.append(f'Sucesso! Imagem {input_path_value} convertida!')
                 else:
-                    QMessageBox.critical(None, "Erro", message)
+                    messagesList.append(f'Erro! Imagem {input_file} falhou!')
+    messagesList.append(f'Conversão concluída! Os arquivos convertidos foram salvos em {output_dir_value}')
+    show_scrollable_dialog("Conversão Concluída", messagesList)
 
 # Função para exibir informações sobre o desenvolvedor
 def show_about():
@@ -103,14 +104,42 @@ def show_about():
 def show_license():
     with open('LICENSE.txt', 'r', encoding='utf-8') as file:
         license_text = file.read()
-    QMessageBox.information(None, "Licença de uso", license_text)
+        
+    show_scrollable_dialog('LICENÇA DE SOFTWARE', license_text)
+
+# Função para exibir janelas de diálogo com textos mais longos que precisam de scroll
+def show_scrollable_dialog(title, text):
+    app = QApplication([])
+
+    dialog = QDialog()
+    dialog.setWindowTitle(title)
+    dialog_layout = QVBoxLayout(dialog)
+
+    text_edit = QTextEdit()
+    text_edit.setPlainText(text)
+    text_edit.setReadOnly(True)
+
+    scroll_area = QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setWidget(text_edit)
+
+    dialog_layout.addWidget(scroll_area)
+
+    close_button = QPushButton("Fechar")
+    close_button.clicked.connect(dialog.close)
+    dialog_layout.addWidget(close_button, alignment=Qt.Alignment())
+
+    dialog.setLayout(dialog_layout)
+    dialog.setMinimumWidth(640)
+    dialog.setMinimumHeight(480)
+
+    dialog.exec_()
 
 # Função para exibir a ajuda
 def show_help():
     with open('README.md', 'r', encoding='utf-8') as file:
         ajuda_text = file.read()
-    QMessageBox.information(None, "Ajuda", ajuda_text)
-    
+    show_scrollable_dialog("Ajuda", ajuda_text)    
 
 
 # Criação da aplicação e da janela principal
