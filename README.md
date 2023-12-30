@@ -28,5 +28,5 @@ Este é um aplicativo de desktop simples, desenvolvido em Python, que permite co
 
 Desenvolvido por: Issao Hanaoka Junior
 E-mail: issaojr.dev@gmail.com
-Versão: 0.5.0
-Data: 29/12/2023
+Versão: 0.9.1
+Data: 30/12/2023
