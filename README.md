@@ -20,8 +20,8 @@ Este é um aplicativo de desktop simples, desenvolvido em Python, que permite co
 
 ## Dependências
 
-- Python 3
-- PyQt5
+- Python 3 (https://www.python.org/downloads/)
+- PyQt5 `pip install pyqt5`
 - cwebp (libwebp-1.3.2-windows-x64 (https://developers.google.com/speed/webp/docs/precompiled?hl=pt-br - incluído no diretório do projeto)
 
 ## Desenvolvedor
